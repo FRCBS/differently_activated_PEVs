@@ -1,0 +1,114 @@
+---
+title: "Comparing PCs and Factors"
+author: "Anna Österberg"
+date: "2024-09-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+##Plotting PCs against factors 
+
+```{r}
+#Loading needed libraries 
+library(factoextra)
+library(FactoMineR)
+library(ggplot2)
+
+#We perform PCA on the macrophage secretome of differently activated PEVs
+raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/cytokine24h.csv",header = TRUE)
+colnames(raw_data) <- c("secretome", "unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "no_PEV_1","no_PEV_2","no_PEV_3","no_PEV_4")
+test_data <- raw_data[,2:17]
+cytokine_data <- as.matrix(test_data)
+pca_data <- PCA(t(cytokine_data), scale.unit = TRUE, graph = FALSE)
+summary(pca_data)
+
+#We choose the 3 first PCs and create a dataframe with their values
+fviz_eig(pca_data, addlabels = TRUE) 
+head(pca_data)
+pca_components <- data.frame(PC1 =pca_data$ind$coord[,1], PC2 =pca_data$ind$coord[,2],PC3 =pca_data$ind$coord[,3])
+head(pca_components)
+
+
+#we load the dataframe containing the factors and sort them so samples are in the same orders in both dataframes
+factors_df <- read.csv(file.choose())
+rownames(factors_df)<- factors_df[,1]
+order <- c("unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4")
+sorted_factors <- factors_df[match(order, rownames(factors_df)),]
+head(sorted_factors)
+
+
+#We create a combined dataframe and format it into matrix for plotting 
+factors_pca <- cbind(pca_components,sorted_factors[,-1])
+head(factors_pca)
+factor_pca_mat <- as.matrix(factors_pca)
+pairs(factor_pca_mat, main = "Top 200 protein and miRNA Factors vs cytokine PCs")
+
+```
+
+## We also plot MOFA factors for cytokines against the protein and miRNA factors 
+```{r}
+#we load the dataframe containing the protein and miRNA factors and order it
+miRNAprotfactors_df <- read.csv(file.choose())
+rownames(miRNAprotfactors_df)<- miRNAprotfactors_df[,1]
+order <- c("unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4")
+miRNAprotsorted_factors <-miRNAprotfactors_df[match(order, rownames(miRNAprotfactors_df)),]
+head(miRNAprotsorted_factors)
+
+#We load the file containing cytokine factors and order it 
+cytokinefactors_df <- read.csv(file.choose())
+rownames(cytokinefactors_df) <- cytokinefactors_df[,1]
+cytokine_sorted_factors <-cytokinefactors_df[match(order, rownames(cytokinefactors_df)),]
+head(cytokine_sorted_factors)
+
+#we create a combined dataframe and convert it to a matrix
+combined_factors <- cbind(cytokine_sorted_factors[,-1],miRNAprotsorted_factors[,-1])
+head(combined_factors)
+combined_mat <- as.matrix(combined_factors)
+
+#we plot the factors against each other
+pairs(combined_mat)
+```
+
+## Plotting a single factor against PC
+-based on the plots above we choose single factors (prot and miRNA) to plot against a PC(cytokine)
+-we then fit a linear regression to the data and print the p-value 
+-we also try fitting a linear regression to the sum of all factors (prot and miRNA) against a PC(cytokine)
+
+```{r}
+
+#Plotting single factors and PCs against each other
+groups <- c("unstimulated", "unstimulated", "unstimulated", "unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC")
+factorPC_df <- as.data.frame(factor_pca_mat)
+factorPC_df$group <- groups
+ggplot(factorPC_df, aes(x=Factor4, y=PC3, color = group)) +geom_point(size  = 2.5 )+ theme_minimal()
+
+
+#Fitting a linear regression model to the PC vs Factor 
+modelFA1_PC2 <- lm(PC2 ~ Factor1 , data = factorPC_df)
+summary(modelFA1_PC2)
+ggplot(factorPC_df, aes(x=Factor1, y=PC2, color = group)) +geom_point(size  = 2.5 ) + geom_smooth(method = "lm", color = "black")+ theme_minimal()
+
+modelFA4_PC3 <- lm(PC3 ~ Factor4 , data = factorPC_df)
+summary(modelFA4_PC3)
+ggplot(factorPC_df, aes(x=Factor4, y=PC3, color = group)) +geom_point(size  = 2.5 ) + geom_smooth(method = "lm", color = "black")+ theme_minimal()
+
+
+#Fitting a regression model to the sum of the factors 
+modelPC2FA <- lm(PC2 ~ (Factor1 + Factor2 + Factor3 + Factor4 + Factor5 + Factor6), data = factorPC_df)
+summary(modelPC2FA)
+modelPC3FA <- lm(PC3 ~ (Factor1 + Factor2 + Factor3 + Factor4 + Factor5 + Factor6), data = factorPC_df)
+summary(modelPC3FA)
+
+       
+```
+
+
+
+
+
+
