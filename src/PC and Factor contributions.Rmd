@@ -1,0 +1,82 @@
+---
+title: "PC and Factor contributions"
+author: "Anna Österberg"
+date: "2024-09-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+## PC loadings for cytokines and weights for proteins in Factor 1 of top 200 MOFA model
+
+```{r}
+#Loading needed libraries
+library(factoextra)
+library(FactoMineR)
+library(tidyverse)
+library(MOFA2)
+library(data.table)
+
+```
+
+We run a PCA on the cytokine data (24 h after treatment) including only PEV samples and extract contributions and loadings for PC1 and PC2 as csv files
+
+```{r}
+raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/cytokine24h.csv",header = TRUE)
+colnames(raw_data) <- c("secretome", "unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "no_PEV_1","no_PEV_2","no_PEV_3","no_PEV_4")
+rownames(raw_data) <- raw_data[,1]
+test_data <- raw_data[,2:17]
+head(test_data)
+cytokine_data <- as.matrix(test_data)
+pca_data <- PCA(t(cytokine_data), scale.unit = TRUE, graph = FALSE)
+summary(pca_data)
+
+PC1contribution_df <- data.frame(contribution =  pca_data$var$contrib[,1], loadings = pca_data$var$coord[,1])[order(-pca_data$var$contrib[,1]),]
+print(PC1contribution_df)
+write.csv(PC1contribution_df, "PC1contribution.csv")
+
+PC2contribution_df <- data.frame(contribution =  pca_data$var$contrib[,2], loadings = pca_data$var$coord[,2])[order(-pca_data$var$contrib[,2]),]
+print(PC2contribution_df)
+write.csv(PC2contribution_df, "PC2contribution.csv")
+```
+
+Since we saw that the top 200 model Factor 1 vs PC2 showed most promise for the PEV samples clustering togheter by groups and in a linear fashion we thus only study the factor contributions for the first factor of that model
+
+```{r}
+model200 <- load_model("/home/aosterberg/Documents/DI_työ/top200MOFAmodel.hdf5") #we load the model
+
+
+#We plot the weights for both proteins and miRNA
+plot_weights(model200, view = "proteins", scale= FALSE, factor = 1) 
+plot_weights(model200, view = "miRNA", factor = 1, scale = FALSE) 
+
+#we extract the weights from each view as a dataframe and order them by absolute value in decreasing order
+prot_weights <- get_weights(model200, view = "proteins", factor = 1, scale = TRUE, as.data.frame = TRUE)
+miRNA_weights <- get_weights(model200, view = "miRNA", factor = 1, scale= TRUE, as.data.frame = TRUE)
+
+ordered_miRNA <- miRNA_weights[order(-abs(miRNA_weights$value)),] %>% select(-view, -factor)
+head(ordered_miRNA)
+ordered_prot <- prot_weights[order(-abs(prot_weights$value)),] %>% select(-view, -factor)
+head(ordered_prot)
+
+# we filter the miRNAs with a weight above 0.5 and see that there are none therefore we will from now on study proteins
+filtered_miRNA <- ordered_miRNA %>% filter(abs(value)>0.5)
+print(filtered_miRNA)
+
+
+#we create a csv file with all proteins with a weight above 0.5 as well as one for all proteins with a positive weight above 0.5 and a weight less than -0.5
+filtered_prot <- ordered_prot %>% filter(abs(value)>0.5)
+neg_vals_0.5 <- filtered_prot %>% filter(value < 0)
+pos_vals_0.5 <- filtered_prot %>% filter(value > 0)
+
+write.csv(neg_vals_0.5, "neg_vals_0.5.csv", row.names = FALSE)
+write.csv(pos_vals_0.5, "pos_vals_0.5.csv", row.names = FALSE)
+write.csv(filtered_prot, "top_proteins_0.5.csv", row.names = FALSE)
+
+```
+
+
