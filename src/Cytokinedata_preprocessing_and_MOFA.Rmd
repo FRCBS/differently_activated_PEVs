@@ -1,0 +1,151 @@
+---
+title: "Cytokinedata_pre_processing and MOFA"
+author: "Anna Österberg"
+date: "2024-09-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = TRUE,
+                      warning = FALSE)
+```
+
+```{r}
+#Loading needed libraries 
+library(factoextra)
+library(FactoMineR)
+library(ggplot2)
+library(tidyverse)
+library(MOFA2)
+library(data.table)
+library(reticulate)
+```
+
+
+## Pre-processing for macrophage secretome data 
+
+### Calculating NA values in cytokine data 6h after PEV treatment
+```{r}
+raw_data <- read.csv(file.choose(),header = TRUE)
+raw_data
+raw_data[raw_data > 10000] <- NA  # missing values were assigned value above 10 000 when converting to csv file for some reason so we now convert them to NA
+raw_data <- raw_data[,2:21]
+raw_data
+colSums(is.na(raw_data))
+sum(is.na(raw_data))
+
+```
+
+### Plotting PCA results of PEV samples before and after normalization 
+
+```{r}
+#Plotting PCA colored by activation before normalization
+raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/cytokine24h.csv",header = TRUE)
+colnames(raw_data) <- c("secretome", "unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4")
+test_data <- raw_data[,2:17]
+cytokine_data <- as.matrix(test_data)
+
+cytokine_groups <- c("unstimulated", "unstimulated", "unstimulated", "unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC")
+
+
+pca_data <- PCA(t(cytokine_data), scale.unit = TRUE, graph = FALSE)
+fviz_eig(pca_data, addlabels = TRUE)
+eigenvalues <- pca_data$eig
+
+fviz_pca_ind(pca_data,
+             col.ind = cytokine_groups, # color by groups
+             palette = c("red","purple","blue","green"), mean.point = FALSE, repel = TRUE,
+             legend.title = "Groups")+labs(title = "PCA of PEVs macrophage secretome after 24 h", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
+
+
+#We plot boxplots of unscaled and then scaled cytokine values 
+cytokine_data[,-1] %>% boxplot
+cytokine_data[,-1] %>% scale %>% boxplot
+
+
+#We create a function to normalize to the standard distribution and apply it to the data
+stdnorm <- function(x){
+  r = rank(x, ties.method = "random")
+  qnorm(r / (length(x) +1))
+}
+
+cytokine_norm <- apply(cytokine_data, 2, stdnorm)
+head(cytokine_norm)
+boxplot(cytokine_norm)
+
+
+#We then plot the normalized data
+pca_data <- PCA(t(cytokine_norm), scale.unit = TRUE, graph = FALSE)
+fviz_eig(pca_data, addlabels = TRUE)
+eigenvalues <- pca_data$eig
+
+fviz_pca_ind(pca_data,
+             col.ind = cytokine_groups, # color by groups
+             palette = c("red","purple","blue","green"), mean.point = FALSE, repel = TRUE,
+             legend.title = "Groups")+labs(title = "PCA of PEVs macrophage secretome after 24 h", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
+
+```
+
+We notice that unstimulated PEVs and GPVI PEVs cluster on top of each other and does not separate in own clusters as before normalization, therefore we choose not to normalize these values as it removes some biologically relevant information and the intensities does not vary largely between samples. 
+
+## Performing MOFA on the cytokine data
+
+```{r}
+
+mofa_data <- list(view1 = cytokine_data)
+lapply(mofa_data, dim)
+
+#creating MOFA object
+MOFA_object <- create_mofa_from_matrix(mofa_data)
+views_names(MOFA_object) <- c("cytokines")
+plot_data_overview(MOFA_object)
+print(MOFA_object)
+
+#Setting training options for data 
+data_opts <- get_default_data_options(MOFA_object) 
+head(data_opts)
+#variances between views here do not differ drastically thus we do not need to scale views?
+
+model_opts <- get_default_model_options(MOFA_object)
+model_opts$num_factors <- 6
+head(model_opts)
+
+train_opts <- get_default_training_options(MOFA_object)
+train_opts$convergence_mode <-"slow"
+set.seed <- 42
+head(train_opts)
+#convergence mode fast is okay for exploration we would like to change it for the real training of the model to slow 
+
+#We train the model 
+MOFA_object <- prepare_mofa(
+  object = MOFA_object,
+  data_options = data_opts,
+  model_options = model_opts,
+  training_options = train_opts
+)
+
+reticulate::use_condaenv("mofa_env10")
+outfile = file.path("/home/aosterberg/Documents/DI_työ", "cytokinemodel.hdf5")
+MOFAobject.trained <- run_mofa(MOFA_object, outfile=outfile, use_basilisk=FALSE)
+
+```
+We then load the model and extract the active factors into a csv file 
+```{r}
+model <- load_model(outfile, remove_inactive_factors = FALSE)
+plot_variance_explained(model, x="view", y="factor")
+
+factor1_df <- get_factors(model, factors = 1, as.data.frame = TRUE)
+factor2_df <- get_factors(model, factors = 2, as.data.frame = TRUE)
+
+factor1_df <- factor1_df %>% select(-group, -factor)
+factor2_df <- factor2_df %>% select(-group, -factor)
+head(factor1_df)
+
+factors_df <- Reduce(function(x,y) merge(x,y, by = "sample"), list(factor1_df, factor2_df))
+colnames(factors_df) <- c("sample", "Cytokine_Factor_1", "Cytokine_Factor_2")
+head(factors_df)
+write.csv(factors_df, "NEWcytokine_factors", row.names = FALSE)
+
+```
+
