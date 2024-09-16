@@ -1,0 +1,157 @@
+---
+title: "PCA_plots"
+output: html_document
+date: "2024-09-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE)
+```
+
+## PCA and plots colored by activation
+
+```{r}
+
+#Loading necessary libraries 
+library(factoextra)
+library(FactoMineR)
+library(ggplot2)
+
+```
+
+##PCA of proteomics 
+
+```{r}
+
+#Loading and formatting data
+raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/PEVproteomics.csv",header = TRUE, dec = ",")
+colnames(raw_data) <- c("protein", "unstimulated_PEV_1","unstimulated_PEV_2","unstimulated_PEV_3","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3","TC_PEV_1","TC_PEV_2","TC_PEV_3")
+test_data <- raw_data[,2:13]
+prot_data <- as.matrix(test_data)
+
+#assigning groups for coloring samples 
+prot_groups <- c("unstimulated", "unstimulated","unstimulated", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC")
+
+pca_data <- PCA(t(prot_data), scale.unit = TRUE, graph = FALSE)
+fviz_eig(pca_data, addlabels = TRUE)
+eigenvalues <- pca_data$eig
+
+summary(pca_data)
+fviz_pca_ind(pca_data,
+             col.ind = prot_groups, # color by groups
+             palette = c("red","purple","blue","green", "orange"), mean.point = FALSE, repel = TRUE,
+             legend.title = "Groups")+labs(title = "PCA of proteomics", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
+
+```
+## PCA of inflammation panel 
+
+```{r}
+
+#Loading and formatting the data 
+raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/PEVinflammationpanel.csv",header = TRUE)
+colnames(raw_data) <- c("protein", "unstimulated_PEV_1","unstimulated_PEV_2","unstimulated_PEV_3", "unstimulated_PEV_4", "GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3","TC_PEV_1","TC_PEV_2","TC_PEV_3")
+test_data <- raw_data[,2:15] 
+PEA_data <- as.matrix(test_data)
+
+#Adding groups for coloring the samples in the plot 
+PEA_groups <- c("unstimulated", "unstimulated","unstimulated", "unstimulated", "GPVI", "GPVI", "GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "TC", "TC","TC")
+
+pca_data <- PCA(t(PEA_data), scale.unit = TRUE, graph = FALSE)
+fviz_eig(pca_data, addlabels = TRUE)
+eigenvalues <- pca_data$eig 
+
+#Plotting the PCA data, coloring by groups and showing variance explained by each principal component
+fviz_pca_ind(pca_data,
+             col.ind = PEA_groups, # color by groups
+             palette = c("red","purple","blue","green"), mean.point = FALSE, repel = TRUE,
+             legend.title = "Groups")+labs(title = "PCA of PEA", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
+
+```
+## PCA of macrophage secretome (cytokines) 24h after PEV treatment 
+-first including no PEV treatment samples and then with only PEV treatments 
+
+```{r}
+#including no PEV samples
+raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/cytokine24h.csv",header = TRUE)
+colnames(raw_data) <- c("secretome", "unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "no_PEV_1","no_PEV_2","no_PEV_3","no_PEV_4")
+test_data <- raw_data[,2:21]
+cytokine_data <- as.matrix(test_data)
+
+cytokine_groups <- c("unstimulated", "unstimulated", "unstimulated", "unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC", "no_PEV", "no_PEV", "no_PEV", "no_PEV")
+
+
+pca_data <- PCA(t(cytokine_data), scale.unit = TRUE, graph = FALSE)
+fviz_eig(pca_data, addlabels = TRUE)
+eigenvalues <- pca_data$eig
+
+fviz_pca_ind(pca_data,
+             col.ind = cytokine_groups, # color by groups
+             palette = c("red","purple","blue","green", "orange"), mean.point = FALSE, repel = TRUE,
+             legend.title = "Groups")+labs(title = "PCA of macrophage secretome after 24 h", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
+
+
+#only PEV treatments
+
+raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/cytokine24h.csv",header = TRUE)
+colnames(raw_data) <- c("secretome", "unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4")
+test_data <- raw_data[,2:17]
+cytokine_data <- as.matrix(test_data)
+
+cytokine_groups <- c("unstimulated", "unstimulated", "unstimulated", "unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC")
+
+
+pca_data <- PCA(t(cytokine_data), scale.unit = TRUE, graph = FALSE)
+fviz_eig(pca_data, addlabels = TRUE)
+eigenvalues <- pca_data$eig
+
+fviz_pca_ind(pca_data,
+             col.ind = cytokine_groups, # color by groups
+             palette = c("red","purple","blue","green"), mean.point = FALSE, repel = TRUE,
+             legend.title = "Groups")+labs(title = "PCA of PEVs macrophage secretome after 24 h", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
+
+```
+## PCA of miRNA data
+-first again including platelet samples and then with only PEV samples
+
+```{r}
+#including platelet samples 
+raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/PEVmiRNA.csv",header = TRUE)
+colnames(raw_data) <- c("miRNA", "GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "unstimulated_PEV_1","unstimulated_PEV_2","unstimulated_PEV_3","unstimulated_PEV_4", "Platelet_1", "Platelet_2", "Platelet_3", "Platelet_4")
+test_data <- raw_data[,2:21]
+miRNA_data <- as.matrix(test_data)
+
+miRNA_groups <- c("GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC", "unstimulated", "unstimulated","unstimulated", "unstimulated","platelet", "platelet","platelet","platelet" )
+
+
+pca_data <- PCA(t(miRNA_data), scale.unit = TRUE, graph = FALSE)
+fviz_eig(pca_data, addlabels = TRUE)
+eigenvalues <- pca_data$eig
+
+fviz_pca_ind(pca_data,
+             col.ind = miRNA_groups, # color by groups
+             palette = c("red","purple","blue","green", "orange"), mean.point = FALSE, repel = TRUE,
+             legend.title = "Groups")+labs(title = "PCA of miRNA", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
+
+#only PEV samples 
+raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/PEVmiRNA.csv",header = TRUE)
+colnames(raw_data) <- c("miRNA", "GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "unstimulated_PEV_1","unstimulated_PEV_2","unstimulated_PEV_3","unstimulated_PEV_4", "Platelet_1", "Platelet_2", "Platelet_3", "Platelet_4")
+test_data <- raw_data[,2:17]
+PEVmiRNA_data <- as.matrix(test_data)
+
+PEVmiRNA_groups <- c("GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC", "unstimulated", "unstimulated","unstimulated", "unstimulated")
+
+pca_data <- PCA(t(PEVmiRNA_data), scale.unit = TRUE, graph = FALSE)
+fviz_eig(pca_data, addlabels = TRUE)
+eigenvalues <- pca_data$eig
+
+summary(pca_data)
+fviz_pca_ind(pca_data,
+             col.ind = PEVmiRNA_groups, # color by groups
+             palette = c("red","purple","blue","green", "orange"), mean.point = FALSE, repel = TRUE,
+             legend.title = "Groups")+labs(title = "PCA of PEVs miRNA", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
+
+```
+
