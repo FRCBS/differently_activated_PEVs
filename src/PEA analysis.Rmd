@@ -1,0 +1,215 @@
+---
+title: "PEA_analysis"
+author: "Anna Österberg"
+date: "2024-09-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+## PEA (inflammation panel) analysis 
+-creating factors 
+-running PCA, extracting PC loading s
+-finding top 10 proteins contributing to variance between groups 
+-plotting these as both barplots and boxplots colored by sample groups 
+
+```{r}
+#Loading needed libraries 
+library(ggplot2)
+library(factoextra)
+library(FactoMineR)
+library(tidyverse)
+library(MOFA2)
+library(reticulate)
+library(data.table)
+
+#Loading and formatting the data
+raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/PEVinflammationpanel.csv",header = TRUE)
+rownames(raw_data) <- raw_data[,1]
+colnames(raw_data) <- c("protein", "unstimulated_PEV_1","unstimulated_PEV_2","unstimulated_PEV_3", "unstimulated_PEV_4", "GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3","TC_PEV_1","TC_PEV_2","TC_PEV_3")
+PEA_df <- raw_data[,2:15] 
+PEA_data <- as.matrix(PEA_df)
+
+```
+### Normalizing the data?
+
+```{r}
+
+PEA_data[,-1] %>% boxplot
+PEA_data[,-1] %>% scale %>% boxplot
+
+
+#We create a function to normalize to the standard distribution 
+stdnorm <- function(x){
+  r = rank(x, ties.method = "random")
+  qnorm(r / (length(x) +1))
+}
+
+#We create matrices of the data and apply the function above
+PEA_norm <- apply(PEA_data, 2, stdnorm)
+boxplot(PEA_norm)
+
+#Adding groups for coloring the samples in the plot 
+PEA_groups <- c("unstimulated", "unstimulated","unstimulated", "unstimulated", "GPVI", "GPVI", "GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "TC", "TC","TC")
+
+
+pca_data <- PCA(t(PEA_norm), scale.unit = TRUE, graph = FALSE)
+fviz_eig(pca_data, addlabels = TRUE)
+eigenvalues <- pca_data$eig 
+
+#Plotting the PCA data, coloring by groups and showing variance explained by each principal component
+fviz_pca_ind(pca_data,
+             col.ind = PEA_groups, # color by groups
+             palette = c("red","purple","blue","green"), mean.point = FALSE, repel = TRUE,
+             legend.title = "Groups")+labs(title = "PCA of  normalized PEA", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
+
+
+```
+
+The normalization still keeps the separation between groups compared to normalizing cytokine data with same steps, thus we move forward with normalized dataset and extract the loadings and factor weights using this data. 
+
+
+### Running PCA on PEA data 
+  -extracting loadings 
+
+```{r}
+
+pca_data <- PCA(t(PEA_norm), scale.unit = TRUE, graph = FALSE)
+#summary(pca_data)
+fviz_eig(pca_data, addlabels = TRUE) 
+
+#Since PC1 explains 51.9% of the variance and PC2 16.6% we extract the loadings for these two 
+PC1loadings <- data.frame(loading = pca_data$var$coord[,1]) %>% arrange(-abs(loading))
+print(PC1loadings)
+PC2loadings <- data.frame(loading = pca_data$var$coord[,2]) %>% arrange(-abs(loading))
+print(PC2loadings)
+```
+
+### Running MOFA on PEA data and extracting factors and weights 
+
+```{r}
+
+mofa_data <- list(view1 = PEA_norm)
+lapply(mofa_data, dim)
+
+#creating MOFA object
+MOFA_object <- create_mofa_from_matrix(mofa_data)
+views_names(MOFA_object) <- c("inflammation panel")
+plot_data_overview(MOFA_object)
+print(MOFA_object)
+
+#Setting training options for data 
+data_opts <- get_default_data_options(MOFA_object) 
+head(data_opts)
+
+
+model_opts <- get_default_model_options(MOFA_object)
+model_opts$num_factors <- 6
+head(model_opts)
+
+train_opts <- get_default_training_options(MOFA_object)
+train_opts$convergence_mode <-"slow"
+set.seed <- 42
+head(train_opts)
+
+
+#We train the model 
+MOFA_object <- prepare_mofa(
+  object = MOFA_object,
+  data_options = data_opts,
+  model_options = model_opts,
+  training_options = train_opts
+)
+
+#In terminal conda create -n mofa_env python=3.10, conda activate mofa_env (you don't have to create a new environment each time, reticulate package you have downloaded does not seem to work with python 3.12 use python 3.10)
+reticulate::use_condaenv("mofa_env10")
+outfile = file.path("/home/aosterberg/Documents/DI_työ","PEAmodel.hdf5")
+MOFAobject.trained <- run_mofa(MOFA_object, outfile=outfile, use_basilisk=FALSE)
+
+
+##############################################################################################################################
+#Downstream analysis of the trained model 
+model <- load_model(outfile, remove_inactive_factors = TRUE)
+plot_variance_explained(model, x="view", y="factor")
+
+```
+
+### Loading PEA data for top proteins and plotting boxplots and barplots 
+
+```{r}
+PEA_weights_factor1 <- get_weights(model, view = "inflammation panel", factor = 1, scale = FALSE, as.data.frame = TRUE) %>% select(-view, -factor) %>%  arrange(-abs(value))
+print(PEA_weights_factor1)
+
+```
+
+### Barplots of the top proteins from loadings in PC1 and PC2 as well as weights for factor 1 
+
+```{r}
+
+#Creating dataframes for the overrepresented proteins to be plotted
+PC1data <- PEA_df[rownames(PC1loadings)[1:10],]
+PC2data <- PEA_df[rownames(PC2loadings)[1:10],]
+Factor1data <-PEA_df[PEA_weights_factor1$feature[1:10],]
+Factor1data
+
+
+#Formatting the dataframes for plotting
+PC1_long <- PC1data %>% 
+  rownames_to_column(var = "Protein") %>% 
+  pivot_longer(-Protein, names_to= "Sample", values_to = "NPX")%>% 
+  mutate(Group=rep(PEA_groups, times  = 10))
+
+PC2_long <- PC2data %>% 
+  rownames_to_column(var = "Protein") %>% 
+  pivot_longer(-Protein, names_to= "Sample", values_to = "NPX")%>% 
+  mutate(Group=rep(PEA_groups, times  = 10))
+
+Factor1_long <- Factor1data %>% 
+  rownames_to_column(var = "Protein") %>% 
+  pivot_longer(-Protein, names_to= "Sample", values_to = "NPX")%>% 
+  mutate(Group=rep(PEA_groups, times  = 10))
+
+
+
+#Function for barplot of each protein colored by group
+boxplot_proteins <- function(df_long, name){
+  df_long %>% filter(Protein == name) %>% 
+  ggplot(aes(x= Group, y = NPX,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =15))
+  
+}
+
+#Creating lists of proteins to be plotted and plotting them in a pdf
+
+PC1_proteins <- unique(PC1_long$Protein)
+PC2_proteins <- unique(PC2_long$Protein)
+factor1_proteins <- unique(Factor1_long$Protein)
+
+
+pdf("PC1_boxplots.pdf")
+for(protein in PC1_proteins){
+  print(boxplot_proteins(PC1_long,protein))
+}
+dev.off()
+
+pdf("PC2_boxplots.pdf")
+for(protein in PC2_proteins){
+  print(boxplot_proteins(PC2_long,protein))
+}
+dev.off()
+
+
+pdf("Factor1_boxplots.pdf")
+for(protein in factor1_proteins){
+  print(boxplot_proteins(Factor1_long,protein))
+}
+dev.off()
+```
+
+
+```
+
+
