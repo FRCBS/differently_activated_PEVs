@@ -70,11 +70,55 @@ fviz_pca_ind(pca_data,
              legend.title = "Groups")+labs(title = "PCA of PEA", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
 
 ```
-## PCA of macrophage secretome (cytokines) 24h after PEV treatment 
--first including no PEV treatment samples and then with only PEV treatments 
+## PCA of macrophage secretome (cytokines) 
+-6h with both no PEV treatment and without PEV treatments
+-24h with both no PEV treatment and without PEV treatments
+
 
 ```{r}
-#including no PEV samples
+#including 2 no PEV samples (2 others are missing in this dataset) after 6h
+cytokine_6h <- read_excel("/home/aosterberg/Documents/DI_työ/data/TableS2.xlsx", sheet = 2) %>% as.data.frame()
+colnames(cytokine_6h) <- c("secretome", "unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "no_PEV_1","no_PEV_2","no_PEV_3","no_PEV_4")
+rownames(cytokine_6h) <- cytokine_6h[,1]
+cytokine_6h <- cytokine_6h[,2:19] %>% as.matrix()
+cytokine_groups <- c("unstimulated", "unstimulated", "unstimulated", "unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC", "no_PEV", "no_PEV")
+
+
+pca_data <- PCA(t(cytokine_6h), scale.unit = TRUE, graph = FALSE)
+fviz_eig(pca_data, addlabels = TRUE)
+eigenvalues <- pca_data$eig
+
+fviz_pca_ind(pca_data,
+             col.ind = cytokine_groups, # color by groups
+             palette = c("red","purple","blue","green", "orange"), mean.point = FALSE, repel = TRUE,
+             legend.title = "Groups")+labs(title = "PCA of macrophage secretome after 6h", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
+
+
+
+
+
+#without no PEV samples after 6h 
+cytokine_6h <- read_excel("/home/aosterberg/Documents/DI_työ/data/TableS2.xlsx", sheet = 2) %>% as.data.frame()
+colnames(cytokine_6h) <- c("secretome", "unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "no_PEV_1","no_PEV_2","no_PEV_3","no_PEV_4")
+rownames(cytokine_6h) <- cytokine_6h[,1]
+PEVcytokine_6h <- cytokine_6h[,2:17] %>% as.matrix()
+PEVcytokine_groups <- c("unstimulated", "unstimulated", "unstimulated", "unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC")
+
+
+pca_data <- PCA(t(PEVcytokine_6h), scale.unit = TRUE, graph = FALSE)
+fviz_eig(pca_data, addlabels = TRUE)
+eigenvalues <- pca_data$eig
+
+fviz_pca_ind(pca_data,
+             col.ind = PEVcytokine_groups, # color by groups
+             palette = c("red","purple","blue","green"), mean.point = FALSE, repel = TRUE,
+             legend.title = "Groups")+labs(title = "PCA of macrophage secretome of PEV samples after 6h", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
+
+
+
+
+
+#including no PEV samples after 24 h 
 raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/cytokine24h.csv",header = TRUE)
 colnames(raw_data) <- c("secretome", "unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "no_PEV_1","no_PEV_2","no_PEV_3","no_PEV_4")
 test_data <- raw_data[,2:21]
@@ -93,7 +137,7 @@ fviz_pca_ind(pca_data,
              legend.title = "Groups")+labs(title = "PCA of macrophage secretome after 24 h", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()
 
 
-#only PEV treatments
+#only PEV treatments after 24 h 
 
 raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/cytokine24h.csv",header = TRUE)
 colnames(raw_data) <- c("secretome", "unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4")
