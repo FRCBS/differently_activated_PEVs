@@ -22,6 +22,7 @@ library(ggplot2)
 library(dplyr)
 library(tidyverse)
 library(readxl)
+library(ggpattern)
 
 
 #Loading cytokines and extracting the ones with highest loadings for PC1 and PC2
@@ -31,20 +32,15 @@ rownames(cyto_data) <- cyto_data[,1]
 cyto_data <- cyto_data[,2:17]
 top_cytokines <-cyto_data[c('Il-7','IL-1 alpha', 'MCP-1', 'MIP-1 alpha', 'MIP-1 beta', 'SDF-1 alpha'),]
 
-#Plotting a single cytokine
-plot_data <- data.frame(Sample = colnames(top_cytokines), Intensity = as.numeric(top_cytokines[1,]), Groups =  c("unstimulated", "unstimulated", "unstimulated", "unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC"))
-ggplot(plot_data, aes(x= Sample, y = Intensity,  fill = Groups))+ geom_bar(stat = "identity") + theme_minimal()+theme(axis.text.x = element_blank()) + labs(title = "IL-7")+ theme(plot.title = element_text(hjust=0.5, size =20))
 
-
-
-#Formatting the dataframe for plotting
+#Formatting the dataframe to a long for plotting and adding a column for the group for coloring
 cytokines_long <- top_cytokines %>% 
                   rownames_to_column(var = "Cytokine") %>% 
                   pivot_longer(-Cytokine, names_to= "Sample", values_to = "Intensity")%>% 
                   mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC"), length  = 96))
                            
   
-#Function for barplot of each cytokine colored by group
+#Function for barplot of each cytokine colored by group and the title being the protein
 plot_cytokines <- function(name){
   cytokines_long %>% filter(Cytokine == name) %>% 
   ggplot(aes(x= Sample, y = Intensity,  fill = Group))+ geom_bar(stat="identity") + theme_minimal()+theme(axis.text.x = element_blank())+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =20))
@@ -59,7 +55,6 @@ for(cytokine in cytokines){
   print(plot_cytokines(cytokine))
 }
 dev.off()
-
 
 
 
@@ -78,7 +73,7 @@ protein_class_prot
 prot_groups <- c("unstimulated", "unstimulated","unstimulated", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC")
 
 
-#Formatting the dataframes for plotting
+#Formatting the dataframes for plotting and adding column for group
 molfunc_long <- mol_func_prot %>% 
   rownames_to_column(var = "Protein") %>% 
   pivot_longer(-Protein, names_to= "Sample", values_to = "Abundance")%>% 
@@ -147,16 +142,21 @@ for(protein in prot_class_proteins){
 dev.off()
 ```
 
-## Loading cytokine after 6h and 24h separately and plotting all cytokines as barplots
+## Loading cytokine after 6h and 24h separately and plotting all cytokines as barplots with both 6h and 24h intensities in the same plot
+ -colored by PEV groups 
+ -pattern by time (6h vs 24h)
 
 
 ```{r}
+
+#Loading the cytokoine data for both 6h and 24h 
 cytokine_6h <- read_excel("/home/aosterberg/Documents/DI_työ/data/TableS2.xlsx", sheet = 2) %>% as.data.frame()
 print(cytokine_6h)
 
 cytokine_24h <- read_excel("/home/aosterberg/Documents/DI_työ/data/TableS2.xlsx", sheet = 3) %>% as.data.frame()
 print(cytokine_24h)
   
+#Assigning sample names and cytokine names as row names 
 colnames(cytokine_6h) <- c("secretome", "unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "no_PEV_1","no_PEV_2","no_PEV_3","no_PEV_4")
 rownames(cytokine_6h) <- cytokine_6h[,1]
 cytokine_6h <- cytokine_6h[,2:17]
@@ -167,40 +167,41 @@ cytokine_24h <- cytokine_24h[,2:17]
 head(cytokine_6h)
 
 
-#Formatting the dataframe for plotting
+#Formatting the dataframe for plotting, adding group column
 cytokines_long_6h <- cytokine_6h %>% 
                   rownames_to_column(var = "Cytokine") %>% 
-                  pivot_longer(-Cytokine, names_to= "Sample", values_to = "Intensity")%>% 
+                  pivot_longer(-Cytokine, names_to= "Sample", values_to = "Intensity") %>% 
                   mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC"), times  = 16))
 
 cytokines_long_24h <- cytokine_24h %>% 
                   rownames_to_column(var = "Cytokine") %>% 
-                  pivot_longer(-Cytokine, names_to= "Sample", values_to = "Intensity")%>% 
+                  pivot_longer(-Cytokine, names_to= "Sample", values_to = "Intensity") %>% 
                   mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC"), times  = 16))
 
-                           
+#We add column for time 
+cytokines_long_6h <- cytokines_long_6h %>% mutate(Time = "6h")
+cytokines_long_24h <- cytokines_long_24h %>% mutate(Time = "24h")
+
+#We combine the dataframes and add a column for specifying group and time as it is the combination plotted in boxplots
+cytokines_long_combined <- bind_rows(cytokines_long_6h, cytokines_long_24h) %>% 
+  mutate(group_time = factor(paste(Group, Time, sep = "_"), levels = c("Unstimulated_6h", "GPVI_6h", "CLEC2_6h", "TC_6h", "Unstimulated_24h", "GPVI_24h", "CLEC2_24h", "TC_24h")))
+print(cytokines_long_combined)
+
+
   
-#Function for barplot of each cytokine colored by group
+#Function for barplot of each cytokine colored by group and pattern based on time 
 plot_cytokines <- function(df_long,name){
   df_long %>% filter(Cytokine == name) %>% 
-  ggplot(aes(x= Group, y = Intensity,  fill = Group))+ geom_boxplot() + theme_minimal()+theme(axis.text.x = element_blank())+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =20))
-  
+  ggplot(aes(x= group_time, y = Intensity,  fill = Group, pattern = Time))+ geom_boxplot_pattern(pattern_density = 0.1, pattern_fill = "black", pattern_spacing = 0.05) + facet_grid(~Group, scales = "free_x", space = "free_x")+theme_minimal()+  labs(title = name, x = "Sample", y = "Intensity")+ theme(plot.title = element_text(hjust=0.5, size =20)) + scale_x_discrete(labels = rep(c("6h","24h"), times = 4))
 }
+
 
 #creating a list of cytokines and plotting each and saving in a pdf
 cytokines_6h <- unique(cytokines_long_6h$Cytokine)
-cytokines_24h <-unique(cytokines_long_24h$Cytokine)
 
-
-pdf("cytokine_boxplots_6h.pdf")
+pdf("cytokine_boxplots_combined.pdf")
 for(cytokine in cytokines_6h){
-  print(plot_cytokines(cytokines_long_6h,cytokine))
-}
-dev.off()
-
-pdf("cytokine_boxplots_24h.pdf")
-for(cytokine in cytokines_24h){
-  print(plot_cytokines(cytokines_long_24h,cytokine))
+  print(plot_cytokines(cytokines_long_combined,cytokine))
 }
 dev.off()
 
