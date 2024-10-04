@@ -75,6 +75,41 @@ fviz_pca_ind(pca_data,
 
 We notice that unstimulated PEVs and GPVI PEVs cluster on top of each other and does not separate in own clusters as before normalization, therefore we choose not to normalize these values as it removes some biologically relevant information and the intensities does not vary largely between samples. 
 
+
+## Calculating total intensities 
+
+```{r}
+
+#Loading the cytokine data for both 6h and 24h 
+cytokine_6h <- read_excel("/home/aosterberg/Documents/DI_työ/data/TableS2.xlsx", sheet = 2) %>% as.data.frame() %>% column_to_rownames(var="...1")
+
+cytokine_24h <- read_excel("/home/aosterberg/Documents/DI_työ/data/TableS2.xlsx", sheet = 3) %>% as.data.frame() %>% column_to_rownames(var="...1")
+  
+
+cytokine_6h <- cytokine_6h[,1:18] #we drop the two last columns with only NA values 
+
+#We caclulate the total intensity and split it into a new dataframe based on PEV group
+total_6h <-colSums(cytokine_6h) 
+groups_6h <- split(total_6h, rep(1:5, each = 4)) %>% as.data.frame()
+groups_6h[3:4,5]<-NA #we add NA values for the missing replicates
+
+
+total_24h <-colSums(cytokine_24h) 
+groups_24h <- split(total_24h, rep(1:5, each = 4)) %>% as.data.frame()
+
+#we combine the dataframe and order the groups
+combined_data <- cbind(groups_6h, groups_24h) 
+rownames(combined_data) <- c("rep 1", "rep 2", "rep 3", "rep 4")
+colnames(combined_data) <- c("Unstimulated_6h", "GPVI_6h", "CLEC2_6h","TC_6h","NO_PEV_6h","Unstimulated_24h", "GPVI_24h", "CLEC2_24h","TC_24h", "NO_PEV_24h")
+
+ordered_data <- combined_data[, c("CLEC2_6h", "CLEC2_24h", "GPVI_6h", "GPVI_24h", "TC_6h", "TC_24h", "Unstimulated_6h", "Unstimulated_24h", "NO_PEV_6h", "NO_PEV_24h")]
+
+#we create a boxplot for total intensity both for 6h and 24h and color by group
+par(mar = c(8,4,4,2) + 0.1)
+boxplot(ordered_data, main = "Total intensities for PEV groups", names = c("CLEC2_6h", "CLEC2_24h", "GPVI_6h", "GPVI_24h", "TC_6h", "TC_24h", "Unstimulated_6h", "Unstimulated_24h", "No_PEV_6h", "No_PEV_24h"), las = 2, col = c("red","red" , "green","green" ,"cyan","cyan", "purple", "purple", "orange", "orange"))
+
+```
+
 ## Performing MOFA on the cytokine data
 
 ```{r}
