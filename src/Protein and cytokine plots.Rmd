@@ -24,6 +24,7 @@ library(dplyr)
 library(tidyverse)
 library(readxl)
 library(ggpattern)
+library(gridExtra)
 ```
   
   
@@ -204,10 +205,20 @@ plot_cytokines <- function(df_long,name){
 #creating a list of cytokines and plotting each and saving in a pdf
 cytokines_6h <- unique(cytokines_long_6h$Cytokine)
 
-pdf("cytokine_boxplots_combined.pdf")
-for(cytokine in cytokines_6h){
-  print(plot_cytokines(cytokines_long_combined,cytokine))
+plots <- list()
+
+
+for (i in seq_along(cytokines_6h)){
+  cytokine <- cytokines_6h[i]
+  plots[[i]] <- plot_cytokines(cytokines_long_combined, cytokine)
 }
+
+
+pdf("GRID_cytokine_boxplots_combined.pdf", width = 14, height = 10)
+for (i in seq(1,length(plots), by = 4)){
+  grid.arrange(grobs = plots[i:min(i + 3, length(plots))], ncol = 2, nrow = 2)
+}
+
 dev.off()
 
 ```
