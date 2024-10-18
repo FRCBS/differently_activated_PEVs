@@ -1,0 +1,268 @@
+---
+title: "CLEC2 significant features"
+author: "Anna Österberg"
+date: "2024-10-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Boxplots of significant features where CLEC2 varies compared to the rest of the PEV groups
+
+```{r}
+#We load needed libraries 
+library(tidyverse)
+library(multcomp)
+library(ggplot2)
+library(broom)
+library(gridExtra)
+```
+
+## We use ANOVA to identify significant proteins 
+
+```{r}
+#We load the data and add sample names and protein names as rownames
+prot_data <- read.csv("/home/aosterberg/Documents/DI_työ/PEVproteomics.csv",header = TRUE, dec = ",")
+colnames(prot_data)<- c("protein", "unstimulated_PEV_1","unstimulated_PEV_2","unstimulated_PEV_3","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3","TC_PEV_1","TC_PEV_2","TC_PEV_3")
+rownames(prot_data) <- prot_data[,1]
+prot_data <- prot_data[,2:13] #we remove NA columns that were present in the loaded csv file 
+head(prot_data)
+
+
+#We format the data frame into long format, adding a group column 
+prot_long <- prot_data %>% 
+  rownames_to_column(var = "Protein") %>% 
+  pivot_longer(-Protein, names_to= "Sample", values_to = "Abundance")%>% 
+  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC"), times  = length(rownames(prot_data))))
+head(prot_long)
+
+
+#As we want to compare CLEC2 sample against the rest, we combine all other groups into "Other" 
+prot_long <- prot_long %>% 
+  mutate(Group = ifelse(Group == "CLEC2", "CLEC2", "Other"))
+head(prot_long)
+
+
+#We perform ANOVA on each protein comparing CLEC2 against other groups 
+results <- prot_long %>% 
+  group_by(Protein) %>% 
+  do(tidy(aov(Abundance~Group, data = .))) %>% 
+  ungroup()
+
+#We arrange results against ascending p.values 
+results <- results %>% 
+  arrange(p.value)
+head(results)
+
+#We perform multiple comparisons correction using bonferroni method 
+results <- results %>% 
+  mutate(p.adjusted = p.adjust(p.value, method = "bonferroni"))
+print(results)
+  
+
+#We filter proteins 
+significant_proteins <- results %>% 
+  filter(p.adjusted < 0.05)
+#Only Tripeptidyl-peptidase 1 was deemed significant, thus we choose to plot the 6 proteins with the lowest p-values which includes this 
+
+
+#We form a new long dataframe including only these 6 proteins 
+proteins <- results[1:6,1] %>% unlist()
+clec2_proteins <- prot_data[proteins,]
+prot_long <- clec2_proteins %>% 
+  rownames_to_column(var = "Protein") %>% 
+  pivot_longer(-Protein, names_to= "Sample", values_to = "Abundance")%>% 
+  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC"), times  = 6))
+head(prot_long)
+
+
+#Function for creating boxplots for each sample for each protein, with boxplots colored by group
+boxplot_proteins <- function(df_long, name){
+  df_long %>% filter(Protein == name) %>% 
+  ggplot(aes(x= Group, y = Abundance,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(size =11))
+}
+
+
+#We create a list of protein plots and arrange them in a pdf 
+plots <- list()
+for (i in seq_along(proteins)){
+  protein <- proteins[i]
+  plots[[i]] <- boxplot_proteins(prot_long, protein)
+}
+
+
+pdf("CLEC2_significant_ANOVA", width = 14, height = 10)
+for (i in seq(1,length(plots), by = 6)){
+  grid.arrange(grobs = plots[i:min(i + 5, length(plots))], ncol = 3, nrow = 2)
+}
+
+dev.off()
+
+```
+
+## We perform the same analysis on miRNA data
+
+```{r}
+
+#We load miRNA dataand add sample names and miRNAs as rownames
+raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/PEVmiRNA.csv",header = TRUE)
+colnames(raw_data) <- c("miRNA", "GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "Unstimulated_PEV_1","Unstimulated_PEV_2","Unstimulated_PEV_3","Unstimulated_PEV_4", "Platelet_1", "Platelet_2", "Platelet_3", "Platelet_4")
+rownames(raw_data)<- raw_data[,1]
+miRNA_data <- raw_data[,2:17] #we drop platelet samples 
+head(miRNA_data)
+
+#We format the data frame into long format, adding a group column 
+miRNA_long <- miRNA_data %>% 
+  rownames_to_column(var = "miRNA") %>% 
+  pivot_longer(-miRNA, names_to= "Sample", values_to = "Counts")%>% 
+  mutate(Group=rep(c("GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC", "Unstimulated", "Unstimulated","Unstimulated", "Unstimulated"), times = length(rownames(miRNA_data))))
+head(miRNA_long)
+
+
+#As we want to compare CLEC2 sample against the rest, we combine all other groups into "Other" 
+miRNA_long <- miRNA_long %>% 
+  mutate(Group = ifelse(Group == "CLEC2", "CLEC2", "Other"))
+
+
+
+#We perform ANOVA on each protein comparing CLEC2 against other groups 
+results <- miRNA_long %>% 
+  group_by(miRNA) %>% 
+  do(tidy(aov(Counts~Group, data = .))) %>% 
+  ungroup()
+
+#We arrange results against ascending p.values 
+results <- results %>% 
+  arrange(p.value)
+head(results)
+
+#We perform multiple comparisons correction using bonferroni method 
+results <- results %>% 
+  mutate(p.adjusted = p.adjust(p.value, method = "bonferroni"))
+  
+
+#We filter miRNAs
+significant_miRNA <- results %>% 
+  filter(p.adjusted < 0.05)
+significant_miRNA
+#Only one miRNA hsa-miR-140-5p had a signficant adjusted p.value after bonferroni correction and as this was included when printing the 6 miRNAs with lowest 
+#p-values we move forward with that group
+
+
+#We form a new long dataframe including only these 6 miRNAs 
+miRNAs <- results[1:6,1] %>% unlist()
+clec2_miRNA <- miRNA_data[miRNAs,]
+miRNA_long <- clec2_miRNA %>% 
+  rownames_to_column(var = "miRNA") %>% 
+  pivot_longer(-miRNA, names_to= "Sample", values_to = "Counts")%>% 
+  mutate(Group=rep(c("GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC", "Unstimulated", "Unstimulated","Unstimulated", "Unstimulated"), times = length(rownames(clec2_miRNA))))
+
+
+#Function for creating boxplots for each sample for each protein, with boxplots colored by group
+boxplot_miRNA<- function(df_long, name){
+  df_long %>% filter(miRNA == name) %>% 
+  ggplot(aes(x= Group, y = Counts,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(size =11))
+}
+
+
+#We create a list of miRNA plots and arrange them in a pdf 
+plots <- list()
+for (i in seq_along(miRNAs)){
+  RNA <- miRNAs[i]
+  plots[[i]] <- boxplot_miRNA(miRNA_long, RNA)
+}
+
+
+pdf("CLEC2_significant_ANOVA_miRNA", width = 14, height = 10)
+for (i in seq(1,length(plots), by = 6)){
+  grid.arrange(grobs = plots[i:min(i + 5, length(plots))], ncol = 3, nrow = 2)
+}
+
+dev.off()
+
+```
+
+## We repeat the analysis for PEA data
+
+```{r}
+
+#Loading the inflammation panel data and setting rownames and sample names 
+raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/PEVinflammationpanel.csv",header = TRUE)
+rownames(raw_data) <- raw_data[,1]
+colnames(raw_data) <- c("protein", "Unstimulated_PEV_1","Unstimulated_PEV_2","Unstimulated_PEV_3", "Unstimulated_PEV_4", "GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3","TC_PEV_1","TC_PEV_2","TC_PEV_3")
+PEA_df <- raw_data[,2:15] 
+PEA_groups <- c("Unstimulated", "Unstimulated","Unstimulated", "Unstimulated", "GPVI", "GPVI", "GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "TC", "TC","TC")
+
+#Formatting the dataframes for plotting
+PEA_long <- PEA_df %>% 
+  rownames_to_column(var = "Protein") %>% 
+  pivot_longer(-Protein, names_to= "Sample", values_to = "NPX")%>% 
+  mutate(Group=rep(PEA_groups, times  = length(rownames(PEA_df))))
+
+
+#As we want to compare CLEC2 sample against the rest, we combine all other groups into "Other" 
+PEA_long <- PEA_long %>% 
+  mutate(Group = ifelse(Group == "CLEC2", "CLEC2", "Other"))
+
+
+#We perform ANOVA on each protein comparing CLEC2 against other groups 
+results <- PEA_long %>% 
+  group_by(Protein) %>% 
+  do(tidy(aov(NPX~Group, data = .))) %>% 
+  ungroup()
+
+#We arrange results against ascending p.values 
+results <- results %>% 
+  arrange(p.value)
+head(results)
+
+#We perform multiple comparisons correction using bonferroni method 
+results <- results %>% 
+  mutate(p.adjusted = p.adjust(p.value, method = "bonferroni"))
+
+  
+
+#We filter proteins 
+significant_proteins <- results %>% 
+  filter(p.adjusted < 0.05)
+significant_proteins
+
+
+#We form a new long dataframe including only these significant proteins  
+proteins <- significant_proteins %>% unlist()
+clec2_proteins <- PEA_df[proteins,]
+PEA_long <- clec2_proteins[1:3,] %>% 
+  rownames_to_column(var = "Protein") %>% 
+  pivot_longer(-Protein, names_to= "Sample", values_to = "NPX")%>% 
+  mutate(Group=rep(c(PEA_groups), times  = 3))
+head(PEA_long)
+
+
+#Function for creating boxplots for each sample for each protein, with boxplots colored by group
+boxplot_proteins <- function(df_long, name){
+  df_long %>% filter(Protein == name) %>% 
+  ggplot(aes(x= Group, y = NPX,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(size =11))
+}
+
+
+
+#We create a list of protein plots and arrange them in a pdf 
+plots <- list()
+for (i in seq_along(proteins)){
+  protein <- proteins[i]
+  plots[[i]] <- boxplot_proteins(PEA_long, protein)
+}
+
+
+pdf("CLEC2_significant_ANOVA_PEA", width = 14, height = 10)
+for (i in seq(1,length(plots), by = 3)){
+  grid.arrange(grobs = plots[i:min(i + 2, length(plots))], ncol = 3, nrow = 2)
+}
+
+dev.off()
+
+```
+
+
