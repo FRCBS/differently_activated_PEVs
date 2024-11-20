@@ -67,28 +67,17 @@ MOFAobject.trained <- run_mofa(MOFA_object, outfile=outfile, use_basilisk=FALSE)
 model <- load_model(outfile, remove_inactive_factors = FALSE)
 plot_variance_explained(model, x="view", y="factor")
 
-#we create a dataframe for each factor 
-factor1_df <- get_factors(model, factors = 1, as.data.frame = TRUE)
-factor2_df <- get_factors(model, factors = 2, as.data.frame = TRUE)
-factor3_df <- get_factors(model, factors = 3, as.data.frame = TRUE)
-factor4_df <- get_factors(model, factors = 4, as.data.frame = TRUE)
-factor5_df <- get_factors(model, factors = 5, as.data.frame = TRUE)
-factor6_df <- get_factors(model, factors = 6, as.data.frame = TRUE)
-
-#we drop columns group and factor 
-factor1_df <- factor1_df %>% select(-group, -factor)
-factor2_df <- factor2_df %>% select(-group, -factor)
-factor3_df <- factor3_df %>% select(-group, -factor)
-factor4_df <- factor4_df %>% select(-group, -factor)
-factor5_df <- factor5_df %>% select(-group, -factor)
-factor6_df <- factor6_df %>% select(-group, -factor)
-
+#we create dataframe for each factor and drop columns group and factor
+factors <- lapply(1:6, function (i) {
+  get_factors(model, factors = i, as.data.frame = TRUE) %>% 
+    select(-group, -factor)
+})
 
 #we merge the dataframes into one and save it as a csv file
-factors_df <- Reduce(function(x,y) merge(x,y, by = "sample"), list(factor1_df, factor2_df, factor3_df, factor4_df, factor5_df, factor6_df))
+factors_df <- Reduce(function(x,y) merge(x,y, by = "sample"), factors)
 colnames(factors_df) <- c("sample", "Factor1", "Factor2", "Factor3", "Factor4", "Factor5", "Factor6")
 head(factors_df)
-write.csv(factors_df, "NEWtop200_MOFA_factors", row.names = FALSE)
+write.csv(factors_df, "NEWtop100_MOFA_factors", row.names = FALSE)
  
 ```
 
