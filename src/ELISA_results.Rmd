@@ -1,0 +1,98 @@
+---
+title: "ELISA_results_plots"
+author: "Anna Österberg"
+date: "2024-11-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Plotting standard curve and concentrations of samples for TNF-alpha ELISA results
+
+```{r}
+#Loading necessary libraries 
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(readxl)
+library(ggpattern)
+library(gridExtra)
+library(reshape2)
+```
+
+## Making the standard curve by fitting a linear model
+
+```{r}
+#Loading the standards
+standards <- read_excel("/home/aosterberg/Documents/tnf-a.xlsx", sheet = 2, col_names = FALSE) %>% as.data.frame() 
+colnames(standards) <- c("concentration", "abs1","abs2")
+
+standards$median_abs <- apply(standards[,c("abs1","abs2")],1,median) #We add a column for the mean absorbance
+head(standards)
+
+model <- lm(median_abs ~concentration, data = standards) #We fit a linear model to the median absorbance
+
+#We shape the data for plotting 
+data_long <- pivot_longer(standards, cols = c("abs1", "abs2", "median_abs"), names_to = "Replicate", values_to= "Absorbance")
+
+cat("Slope:", coef(model)[2])
+cat("Intercept:", coef(model)[1])
+
+
+ggplot(data_long, aes(x= concentration, y = Absorbance, color = Replicate))+ geom_point()+ geom_smooth(method = "lm", color = "black")+ labs(title = "Standard curve", x="Concentration (pg/ml)", y="Absorption 450 nm")+ scale_color_manual(values = c("abs1" = "blue", "abs2" = "green", "median_abs" = "black")) + theme_minimal()
+
+#Function for calculating concentration based on absorption and the standard curve
+calc_conc <- function(absorbance, model) {
+  ((absorbance - coef(model)[1])/coef(model)[2])*2 #we diluted samples 1:2 so we multiply by dilution factor
+}
+
+#We load the sample data with absorbances
+absorbances <- read_excel("/home/aosterberg/Documents/tnf-a.xlsx", sheet = 3) %>% as.data.frame() 
+head(absorbances)
+
+#We create a new data frame and apply the calc_conc function to all values
+#We set all negative concentrations to 0 
+concentrations <- absorbances 
+concentrations[,-1] <- lapply(absorbances[,-1], calc_conc, model = model) %>% as.data.frame() %>% mutate(across(everything(), ~ ifelse(. <0, 0, .)))
+head(concentrations)
+
+
+concentrations$Cell_type <- rep(c("M1", "M2", "M1", "M2"), each =6) #We add column for cell type 
+concentrations$Bio_rep <- rep(c("A", "B", "C"), each= 2) #We add column for biological replicate
+print(concentrations)
+
+#We save the dataframes in csv format
+write.csv(concentrations, file= "/home/aosterberg/conc.csv")
+write.csv(absorbances, file= "/home/aosterberg/abs.csv")
+
+#We format the concentration dataframe for plotting 
+conc_long <- melt(concentrations, id.vars = c("Sample", "Cell_type", "Bio_rep"), variable.name = "Treatment", value.name = "Concentration")
+print(conc_long)
+
+
+```
+## PLotting the concentration data 
+
+
+```{r}
+
+#We make a scatter plot with all samples, colored by treatment and shape by biological replicate
+ggplot(conc_long, aes(x= Sample, y= Concentration, color = Treatment, shape = Bio_rep))+ geom_point(size =3) + theme_minimal() + theme(axis.text.x = element_blank(), panel.border = element_rect(color = "black", fill = NA))+ facet_wrap(~Cell_type)+ labs(title = "Scatterplot of TNF-alpha concentrations for each sample", x = "Sample", y= "Concentration (pg/ml)")+ scale_color_manual(values = c("TC"="blue", "US"= "purple", "NO" = "orange"))
+
+
+
+#We add a column for time and one defining treatment, cell type and time
+conc_long$Time <- rep(c("2h", "6h"), each =12) 
+
+conc_long <- conc_long %>% mutate(Group_time = factor(paste(Treatment, Time, Cell_type, sep = "_"), levels = c("M1TC_2h","M2_TC_2h", "M1_US_2h", "M2_US_2h", "M1_NO_2h","M2_NO_2h", "M1_TC_6h", "M2_TC_6h", "M1_US_6h","M2_US_6h", "M1_NO_6h", "M2_NO_6h")))
+
+#We make a boxplots for each group of treatment, cell type and time, colored by treatment and pattern by time  point
+ggplot(conc_long, aes(x= Group_time, y = Concentration,  fill = Treatment, pattern = Time))+ geom_boxplot_pattern(pattern_density = 0.1, pattern_fill = "black", pattern_spacing = 0.05) +theme_minimal() + labs(title = "TNF-alpha concentration", x = "Sample", y = "Concentration (pg/ml)")+ theme(axis.text.x = element_blank(), plot.title = element_text(hjust=0.5, size =20)) + facet_wrap(Cell_type~ Time, scales = "free_x", nrow= 1)+ scale_fill_manual(values =c("TC"="blue", "US"= "purple", "NO" = "orange"))
+
+
+
+
+```
+
