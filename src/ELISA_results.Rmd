@@ -59,6 +59,13 @@ concentrations[,-1] <- lapply(absorbances[,-1], calc_conc, model = model) %>% as
 head(concentrations)
 
 
+#We calculate controls 
+control_high = calc_conc(0.7341, model=model)
+control_low = calc_conc(0.0358, model = model)
+print(control_high)
+print(control_low)
+
+
 concentrations$Cell_type <- rep(c("M1", "M2", "M1", "M2"), each =6) #We add column for cell type 
 concentrations$Bio_rep <- rep(c("A", "B", "C"), each= 2) #We add column for biological replicate
 print(concentrations)
