@@ -41,7 +41,7 @@ cat("Slope:", coef(model)[2])
 cat("Intercept:", coef(model)[1])
 
 
-ggplot(data_long, aes(x= concentration, y = Absorbance, color = Replicate))+ geom_point()+ geom_smooth(method = "lm", color = "black")+ labs(title = "Standard curve", x="Concentration (pg/ml)", y="Absorption 450 nm")+ scale_color_manual(values = c("abs1" = "blue", "abs2" = "green", "median_abs" = "black")) + theme_minimal()
+ggplot(data_long, aes(x= concentration, y = Absorbance, color = Replicate))+ geom_point()+ geom_smooth(method = "lm", color = "black")+ labs(title = "Standard curve", x="Concentration (pg/ml)", y="Absorption 450 nm")+ scale_color_manual(values = c("abs1" = "blue", "abs2" = "green", "median_abs" = "black")) + theme_minimal()+ theme(axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_text(size = 11, color = "black"), axis.text.y = element_text(size = 11, color = "black"))
 
 #Function for calculating concentration based on absorption and the standard curve
 calc_conc <- function(absorbance, model) {
@@ -86,7 +86,9 @@ print(conc_long)
 ```{r}
 
 #We make a scatter plot with all samples, colored by treatment and shape by biological replicate
-ggplot(conc_long, aes(x= Sample, y= Concentration, color = Treatment, shape = Bio_rep))+ geom_point(size =3) + theme_minimal() + theme(axis.text.x = element_blank(), panel.border = element_rect(color = "black", fill = NA))+ facet_wrap(~Cell_type)+ labs(title = "Scatterplot of TNF-alpha concentrations for each sample", x = "Sample", y= "Concentration (pg/ml)")+ scale_color_manual(values = c("TC"="blue", "US"= "purple", "NO" = "orange"))
+
+ggplot(conc_long, aes(x= Sample, y= Concentration, color = Treatment, shape = Bio_rep)) + geom_point(size =3) + theme_minimal() + facet_wrap(~Cell_type) + labs(title = "Scatterplot of TNF-alpha concentrations for each sample", x = "      2h                    6h            Sample          2h                      6h      ", y= "Concentration (pg/ml)")+ scale_color_manual(values = c("TC"="blue", "US"= "purple", "NO" = "orange"))+theme(axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 11, color = "black"), panel.border = element_rect(color = "black", fill = NA), strip.text = element_text(size = 11))
+
 
 
 
@@ -96,7 +98,7 @@ conc_long$Time <- rep(c("2h", "6h"), each =12)
 conc_long <- conc_long %>% mutate(Group_time = factor(paste(Treatment, Time, Cell_type, sep = "_"), levels = c("M1TC_2h","M2_TC_2h", "M1_US_2h", "M2_US_2h", "M1_NO_2h","M2_NO_2h", "M1_TC_6h", "M2_TC_6h", "M1_US_6h","M2_US_6h", "M1_NO_6h", "M2_NO_6h")))
 
 #We make a boxplots for each group of treatment, cell type and time, colored by treatment and pattern by time  point
-ggplot(conc_long, aes(x= Group_time, y = Concentration,  fill = Treatment, pattern = Time))+ geom_boxplot_pattern(pattern_density = 0.1, pattern_fill = "black", pattern_spacing = 0.05) +theme_minimal() + labs(title = "TNF-alpha concentration", x = "Sample", y = "Concentration (pg/ml)")+ theme(axis.text.x = element_blank(), plot.title = element_text(hjust=0.5, size =20)) + facet_wrap(Cell_type~ Time, scales = "free_x", nrow= 1)+ scale_fill_manual(values =c("TC"="blue", "US"= "purple", "NO" = "orange"))
+ggplot(conc_long, aes(x= Group_time, y = Concentration,  fill = Treatment, pattern = Time))+ geom_boxplot_pattern(pattern_density = 0.1, pattern_fill = "black", pattern_spacing = 0.05) +theme_minimal() + labs(title = "TNF-alpha concentration", x = "Sample", y = "Concentration (pg/ml)") + facet_wrap(Cell_type~ Time, scales = "free_x", nrow= 1)+ scale_fill_manual(values =c("TC"="blue", "US"= "purple", "NO" = "orange"))+theme(axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 11, color = "black"), strip.text = element_text(size = 11), plot.title = element_text(size = 20))
 
 
 
