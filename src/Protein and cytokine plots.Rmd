@@ -43,14 +43,13 @@ top_cytokines <-cyto_data[c('Il-7','IL-1 alpha', 'MCP-1', 'MIP-1 alpha', 'MIP-1 
 cytokines_long <- top_cytokines %>% 
                   rownames_to_column(var = "Cytokine") %>% 
                   pivot_longer(-Cytokine, names_to= "Sample", values_to = "Intensity")%>% 
-                  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC"), length  = 96))
+                  mutate(Group=rep(c("US", "US", "US", "US", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC"), length  = 96))
                            
   
 #Function for barplot of each cytokine colored by group and the title being the protein
 plot_cytokines <- function(name){
   cytokines_long %>% filter(Cytokine == name) %>% 
-  ggplot(aes(x= Sample, y = Intensity,  fill = Group))+ geom_bar(stat="identity") + theme_minimal()+theme(axis.text.x = element_blank())+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =20))
-  
+  ggplot(aes(x= Sample, y = Intensity,  fill = Group))+ geom_bar(stat="identity") + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =20))+ theme(axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 11, color = "black"))
 }
 
 #creating a list of cytokines and plotting each and saving in a pdf
@@ -76,26 +75,26 @@ mol_func_prot <- prot_data[c('Transforming growth factor-beta-induced protein ig
 print(mol_func_prot)
 protein_class_prot <- prot_data[c('Connective tissue growth factor','Platelet-derived growth factor D', 'Angiopoietin-1', 'Fibrinogen beta chain', 'Platelet factor 4', 'Platelet basic protein', 'Platelet-derived growth factor subunit B', 'Platelet-derived growth factor subunit A'),]
 protein_class_prot
-prot_groups <- c("unstimulated", "unstimulated","unstimulated", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC")
+prot_groups <- c("US", "US","US", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC")
 
 
 #Formatting the dataframes for plotting and adding column for group
 molfunc_long <- mol_func_prot %>% 
   rownames_to_column(var = "Protein") %>% 
   pivot_longer(-Protein, names_to= "Sample", values_to = "Abundance")%>% 
-  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC"), times  = 10))
+  mutate(Group=rep(c("US", "US", "US", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC"), times  = 10))
 
 protclass_long <- protein_class_prot %>% 
   rownames_to_column(var = "Protein") %>% 
   pivot_longer(-Protein, names_to= "Sample", values_to = "Abundance")%>% 
-  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC"), times  = 8))
+  mutate(Group=rep(c("US", "US", "US", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC"), times  = 8))
 
 
 
 #Function for barplot of each protein colored by group
 plot_proteins <- function(df_long, name){
   df_long %>% filter(Protein == name) %>% 
-  ggplot(aes(x= Sample, y = Abundance,  fill = Group))+ geom_bar(stat="identity") + theme_minimal()+theme(axis.text.x = element_blank())+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =15))
+  ggplot(aes(x= Sample, y = Abundance,  fill = Group))+ geom_bar(stat="identity") + theme_minimal()+theme(axis.text.x = element_blank())+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =15), axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 11, color = "black"))
   
 }
 
@@ -125,8 +124,7 @@ dev.off()
 #Function for barplot of each protein colored by group
 boxplot_proteins <- function(df_long, name){
   df_long %>% filter(Protein == name) %>% 
-  ggplot(aes(x= Group, y = Abundance,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =15))
-  
+  ggplot(aes(x= Group, y = Abundance,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =15),axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 11, color = "black"))
 }
 
 #Creating lists of proteins to be plotted and plotting them in a pdf
@@ -177,12 +175,12 @@ head(cytokine_6h)
 cytokines_long_6h <- cytokine_6h %>% 
                   rownames_to_column(var = "Cytokine") %>% 
                   pivot_longer(-Cytokine, names_to= "Sample", values_to = "Intensity") %>% 
-                  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC"), times  = 16))
+                  mutate(Group=rep(c("US", "US", "US", "US", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC"), times  = 16))
 
 cytokines_long_24h <- cytokine_24h %>% 
                   rownames_to_column(var = "Cytokine") %>% 
                   pivot_longer(-Cytokine, names_to= "Sample", values_to = "Intensity") %>% 
-                  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC"), times  = 16))
+                  mutate(Group=rep(c("US", "US", "US", "US", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC"), times  = 16))
 
 #We add column for time 
 cytokines_long_6h <- cytokines_long_6h %>% mutate(Time = "6h")
@@ -190,7 +188,7 @@ cytokines_long_24h <- cytokines_long_24h %>% mutate(Time = "24h")
 
 #We combine the dataframes and add a column for specifying group and time as it is the combination plotted in boxplots
 cytokines_long_combined <- bind_rows(cytokines_long_6h, cytokines_long_24h) %>% 
-  mutate(group_time = factor(paste(Group, Time, sep = "_"), levels = c("Unstimulated_6h", "GPVI_6h", "CLEC2_6h", "TC_6h", "Unstimulated_24h", "GPVI_24h", "CLEC2_24h", "TC_24h")))
+  mutate(group_time = factor(paste(Group, Time, sep = "_"), levels = c("US_6h", "GPVI_6h", "CLEC2_6h", "TC_6h", "US_24h", "GPVI_24h", "CLEC2_24h", "TC_24h")))
 print(cytokines_long_combined)
 
 
@@ -198,7 +196,7 @@ print(cytokines_long_combined)
 #Function for barplot of each cytokine colored by group and pattern based on time 
 plot_cytokines <- function(df_long,name){
   df_long %>% filter(Cytokine == name) %>% 
-  ggplot(aes(x= group_time, y = Intensity,  fill = Group, pattern = Time))+ geom_boxplot_pattern(pattern_density = 0.1, pattern_fill = "black", pattern_spacing = 0.05) + facet_grid(~Group, scales = "free_x", space = "free_x")+theme_minimal()+  labs(title = name, x = "Sample", y = "Intensity")+ theme(plot.title = element_text(hjust=0.5, size =20)) + scale_x_discrete(labels = rep(c("6h","24h"), times = 4))
+  ggplot(aes(x= group_time, y = Intensity,  fill = Group, pattern = Time))+ geom_boxplot_pattern(pattern_density = 0.1, pattern_fill = "black", pattern_spacing = 0.05) + facet_grid(~Group, scales = "free_x", space = "free_x") +theme_minimal()+ labs(title = name, x = "Sample", y = "Intensity")+ theme(plot.title = element_text(hjust=0.5, size =20),axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 11, color = "black"),strip.text = element_text(size = 11)) + scale_x_discrete(labels = rep(c("6h","24h"), times = 4))
 }
 
 
@@ -254,12 +252,12 @@ head(cytokine_6h)
 cytokines_long_6h <- cytokine_6h %>% 
                   rownames_to_column(var = "Cytokine") %>% 
                   pivot_longer(-Cytokine, names_to= "Sample", values_to = "Intensity") %>% 
-                  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "Unstimulated", "CLEC2", "CLEC2", "CLEC2", "CLEC2"), times  = 16))
+                  mutate(Group=rep(c("US", "US", "US", "US", "CLEC2", "CLEC2", "CLEC2", "CLEC2"), times  = 16))
 
 cytokines_long_24h <- cytokine_24h %>% 
                   rownames_to_column(var = "Cytokine") %>% 
                   pivot_longer(-Cytokine, names_to= "Sample", values_to = "Intensity") %>% 
-                  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "Unstimulated", "CLEC2", "CLEC2", "CLEC2", "CLEC2"), times  = 16))
+                  mutate(Group=rep(c("US", "US", "US", "US", "CLEC2", "CLEC2", "CLEC2", "CLEC2"), times  = 16))
 
 #We add column for time 
 cytokines_long_6h <- cytokines_long_6h %>% mutate(Time = "6h")
@@ -267,7 +265,7 @@ cytokines_long_24h <- cytokines_long_24h %>% mutate(Time = "24h")
 
 #We combine the dataframes and add a column for specifying group and time as it is the combination plotted in boxplots
 cytokines_long_combined <- bind_rows(cytokines_long_6h, cytokines_long_24h) %>% 
-  mutate(group_time = factor(paste(Group, Time, sep = "_"), levels = c("Unstimulated_6h", "CLEC2_6h", "Unstimulated_24h", "CLEC2_24h")))
+  mutate(group_time = factor(paste(Group, Time, sep = "_"), levels = c("US_6h", "CLEC2_6h", "US_24h", "CLEC2_24h")))
 print(cytokines_long_combined)
 
 
@@ -275,7 +273,7 @@ print(cytokines_long_combined)
 #Function for barplot of each cytokine colored by group and pattern based on time 
 plot_cytokines <- function(df_long,name){
   df_long %>% filter(Cytokine == name) %>% 
-  ggplot(aes(x= group_time, y = Intensity,  fill = Group, pattern = Time))+ geom_boxplot_pattern(pattern_density = 0.1, pattern_fill = "black", pattern_spacing = 0.05) + facet_grid(~Group, scales = "free_x", space = "free_x")+theme_minimal()+  labs(title = name, x = "Sample", y = "Intensity")+ theme(plot.title = element_text(hjust=0.5, size =20)) + scale_x_discrete(labels = rep(c("6h","24h"), times = 4)) + scale_fill_manual(values = c("Unstimulated" = "purple", "CLEC2"="red"))
+  ggplot(aes(x= group_time, y = Intensity,  fill = Group, pattern = Time))+ geom_boxplot_pattern(pattern_density = 0.1, pattern_fill = "black", pattern_spacing = 0.05) + facet_grid(~Group, scales = "free_x", space = "free_x")+theme_minimal()+  labs(title = name, x = "Sample", y = "Intensity")+ theme(plot.title = element_text(hjust=0.5, size =20), axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 11, color = "black"))+ scale_x_discrete(labels = rep(c("6h","24h"), times = 4)) + scale_fill_manual(values = c("Unstimulated" = "purple", "CLEC2"="red"))
 }
 
 
@@ -311,30 +309,30 @@ cytokine_24h <- cytokine_24h[,1:20]
 cytokines_long_6h <- cytokine_6h %>% 
                   rownames_to_column(var = "Cytokine") %>% 
                   pivot_longer(-Cytokine, names_to= "Sample", values_to = "Intensity") %>% 
-                  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC", "NO_PEV","NO_PEV"), times  = 16)) %>% 
+                  mutate(Group=rep(c("US", "US", "US", "US", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC", "NO_PEV","NO_PEV"), times  = 16)) %>% 
                   mutate(Time = "6h")
 print(cytokines_long_6h)
 
 cytokines_long_24h <- cytokine_24h %>% 
                   rownames_to_column(var = "Cytokine") %>% 
                   pivot_longer(-Cytokine, names_to= "Sample", values_to = "Intensity") %>% 
-                  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC","NO_PEV","NO_PEV","NO_PEV","NO_PEV"), times  = 16)) %>% 
+                  mutate(Group=rep(c("US", "US", "US", "US", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC","NO_PEV","NO_PEV","NO_PEV","NO_PEV"), times  = 16)) %>% 
                   mutate(Time = "24h")
 
 
 #We combine the dataframes and add a column for specifying group and time as it is the combination plotted in boxplots
 cytokines_long_combined <- bind_rows(cytokines_long_6h, cytokines_long_24h) %>% 
-  mutate(group_time = factor(paste(Group, Time, sep = "_"), levels = c("Unstimulated_6h", "GPVI_6h", "CLEC2_6h", "TC_6h", "Unstimulated_24h", "GPVI_24h", "CLEC2_24h", "TC_24h", "NO_PEV_6h", "NO_PEV_24h")))
+  mutate(group_time = factor(paste(Group, Time, sep = "_"), levels = c("US_6h", "GPVI_6h", "CLEC2_6h", "TC_6h", "US_24h", "GPVI_24h", "CLEC2_24h", "TC_24h", "NO_PEV_6h", "NO_PEV_24h")))
 print(cytokines_long_combined)
 
   
 #Function for barplot of each cytokine colored by group and pattern based on time 
 plot_cytokines <- function(df_long,name){
   df_long %>% filter(Cytokine == name) %>% 
-  mutate(group_time = factor(group_time, levels= c("CLEC2_6h","CLEC2_24h", "GPVI_6h","GPVI_24h","TC_6h", "TC_24h", "Unstimulated_6h","Unstimulated_24h", "NO_PEV_6h", "NO_PEV_24h"))) %>% 
-    mutate(Group = factor(Group, levels = c("CLEC2", "GPVI", "TC", "Unstimulated", "NO_PEV"))) %>% 
+  mutate(group_time = factor(group_time, levels= c("CLEC2_6h","CLEC2_24h", "GPVI_6h","GPVI_24h","TC_6h", "TC_24h", "US_6h","US_24h", "NO_PEV_6h", "NO_PEV_24h"))) %>% 
+    mutate(Group = factor(Group, levels = c("CLEC2", "GPVI", "TC", "US", "NO_PEV"))) %>% 
     mutate(Time = factor(Time, levels = c("6h", "24h"))) %>% 
-  ggplot(aes(x= group_time, y = Intensity,  fill = Group, pattern = Time))+ geom_boxplot_pattern(pattern_density = 0.1, pattern_fill = "black", pattern_spacing = 0.05) +theme_minimal()+  labs(title = name, x = "Sample", y = "Intensity")+ theme(plot.title = element_text(hjust=0.5, size =20), axis.text.x = element_text(angle = 45, hjust =1)) + scale_fill_manual(values = c("CLEC2" = "red", "GPVI" = "green", "TC"="cyan", "Unstimulated" ="purple", "NO_PEV" = "orange"))
+  ggplot(aes(x= group_time, y = Intensity,  fill = Group, pattern = Time))+ geom_boxplot_pattern(pattern_density = 0.1, pattern_fill = "black", pattern_spacing = 0.05)+theme_minimal()+  labs(title = name, x = "Sample", y = "Intensity")+ theme(plot.title = element_text(hjust=0.5, size =20), axis.text.x = element_text(angle = 45, hjust =1, size = 11, color = "black"), axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.y = element_text(size = 11, color = "black")) + scale_fill_manual(values = c("CLEC2" = "red", "GPVI" = "green", "TC"="cyan", "US" ="purple", "NO_PEV" = "orange"))
 }
 
 plot_cytokines(cytokines_long_combined, "TNF alpha")
