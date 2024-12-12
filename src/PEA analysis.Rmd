@@ -38,9 +38,9 @@ PEA_data <- as.matrix(PEA_df)
 ### Normalizing the data
 
 ```{r}
-
-PEA_data[,-1] %>% boxplot
-PEA_data[,-1] %>% scale %>% boxplot
+#We create boxplots for both unscaled and scaled data
+boxplot(PEA_data[,-1], cex.axis = 1.2, cex.names = 1) 
+boxplot(PEA_data[,-1] %>% scale, cex.axis = 1.2, cex.names = 1)
 
 
 #We create a function to normalize to the standard distribution 
@@ -51,7 +51,7 @@ stdnorm <- function(x){
 
 #We create matrices of the data and apply the function above
 PEA_norm <- apply(PEA_data, 2, stdnorm)
-boxplot(PEA_norm)
+boxplot(PEA_norm, cex.axis = 1.2)
 
 #Adding groups for coloring the samples in the plot 
 PEA_groups <- c("US", "US","US", "US", "GPVI", "GPVI", "GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "TC", "TC","TC")
@@ -66,9 +66,10 @@ eigenvalues <- pca_data$eig
 fviz_pca_ind(pca_data,
              col.ind = PEA_groups, # color by groups
              palette = sample_colors, mean.point = FALSE, repel = TRUE,
-             legend.title = "Groups")+labs(title = "PCA of  normalized PEA data", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()+ scale_shape_manual(values = rep(16, length(unique(PEA_groups)))) + guides(color = guide_legend(override.aes = list(shape = 16, size = 4)))+theme(axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 11, color = "black"))
+             legend.title = "Groups")+labs(title = "PCA of  normalized PEA data", x= paste0("PC1 (",round(eigenvalues[1,2],2),"%)"), y= paste0("PC2 (",round(eigenvalues[2,2],2),"%)")) + theme_minimal()+ scale_shape_manual(values = rep(16, length(unique(PEA_groups)))) + guides(color = guide_legend(override.aes = list(shape = 16, size = 4)))+theme(axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_text(size = 13, color = "black"), axis.text.y = element_text(size = 13,  color = "black"),legend.text = element_text(size = 12), legend.title = element_text(size  = 12))
                                                                                                                                                                                                                                                                                                                                                        
-  #creating a list of cytokines and plotting each and saving in a pdf
+
+#creating a list of cytokines and plotting each and saving in a pdf
 cytokines_6h <- unique(cytokines_long_6h$Cytokine)
 
 
@@ -142,15 +143,15 @@ plot_variance_explained(model, x="view", y="factor")
 
 ```
 
-### Loading PEA data for top proteins and plotting boxplots and barplots 
+### Loading PEA data for top proteins and plotting boxplots 
 
 ```{r}
-PEA_weights_factor1 <- get_weights(model, view = "inflammation panel", factor = 1, scale = FALSE, as.data.frame = TRUE) %>% select(-view, -factor) %>%  arrange(-abs(value))
+PEA_weights_factor1 <- get_weights(model, view = "inflammation panel", factor = 1, scale = FALSE, as.data.frame = TRUE)  %>%  arrange(-abs(value))
 print(PEA_weights_factor1)
 
 ```
 
-### Barplots of the top proteins from loadings in PC1 and PC2 as well as weights for factor 1 
+### Boxplots of the top proteins from loadings in PC1 and PC2 as well as weights for factor 1 
 
 ```{r}
 
@@ -182,7 +183,7 @@ Factor1_long <- Factor1data %>%
 #Function for barplot of each protein colored by group
 boxplot_proteins <- function(df_long, name){
   df_long %>% filter(Protein == name) %>% 
-  ggplot(aes(x= Group, y = NPX,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =15), axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 13, color = "black"))
+  ggplot(aes(x= Group, y = NPX,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+guides(color = guide_legend(override.aes = list(size = 4)))+theme(axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_text(size = 13, color = "black"), axis.text.y = element_text(size = 13,  color = "black"),legend.text = element_text(size = 12), legend.title = element_text(size  = 12), plot.title = element_text(size = 15, hjust = 0.5))
 }
 
 #Creating lists of proteins to be plotted and plotting them in a pdf
