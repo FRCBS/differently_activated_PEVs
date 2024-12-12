@@ -20,29 +20,29 @@ library(dplyr)
 #We read in the data
 raw_prot <- read.csv("/home/aosterberg/Documents/DI_työ/PEVproteomics.csv",header = TRUE, dec = ",")[,1:13]
 head(raw_prot %>% na.omit)
-colnames(raw_prot) <- c("protein", "unstimulated_PEV_1","unstimulated_PEV_2","unstimulated_PEV_3","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3","TC_PEV_1","TC_PEV_2","TC_PEV_3")
+colnames(raw_prot) <- c("protein", "US_PEV_1","US_PEV_2","US_PEV_3","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3","TC_PEV_1","TC_PEV_2","TC_PEV_3")
 
 raw_miRNA <- read.csv("/home/aosterberg/Documents/DI_työ/PEVmiRNA.csv",header = TRUE)
-colnames(raw_miRNA) <- c("miRNA", "GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "unstimulated_PEV_1","unstimulated_PEV_2","unstimulated_PEV_3","unstimulated_PEV_4", "Platelet_1", "Platelet_2", "Platelet_3", "Platelet_4")
+colnames(raw_miRNA) <- c("miRNA", "GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "US_PEV_1","US_PEV_2","US_PEV_3","US_PEV_4", "Platelet_1", "Platelet_2", "Platelet_3", "Platelet_4")
 raw_miRNA <- raw_miRNA[,1:17]
 head(raw_miRNA)
 
 
 #We plot boxplot of both scaled and unscaled miRNA and proteomics data
-raw_prot[,-1] %>% boxplot
-raw_prot[,-1] %>% scale %>% boxplot
-raw_miRNA[,-1] %>%  boxplot
-raw_miRNA[,-1] %>% scale %>% boxplot
+boxplot(raw_prot[,-1], cex.axis = 1.2)
+boxplot(raw_prot[,-1] %>% scale, cex.axis = 1.2)
+boxplot(raw_miRNA[,-1], cex.axis = 1.2)
+boxplot(raw_miRNA[,-1] %>% scale, cex.axis =1.2)
 
 
-#We filter the 100 top features with most variance between samples 
-raw_prot[,-1] %>%  apply(., 1, var) %>% hist
+#We filter the 100 top features with most variance between samples for both protein and miRNAs
+hist(raw_prot[,-1] %>%  apply(., 1, var), cex.axis = 1.2, main = "Variance between samples for proteins", ylab = "Frequency", xlab = "Variance", cex.main = 1.5, cex.lab = 1.3)
 prot.var <- raw_prot[,-1] %>%  apply(., 1, var)
 prot.var %>% sort %>% rev %>% .[100]
 top_prot <- raw_prot[prot.var > 1.1676,] 
 
 
-raw_miRNA[,-1] %>%  apply(., 1, var) %>% hist
+hist(raw_miRNA[,-1] %>%  apply(., 1, var), cex.axis = 1.2, main = "Variance between samples for miRNA", ylab = "Frequency", xlab = "Variance", cex.main = 1.5, cex.lab = 1.3)
 rna.var <- raw_miRNA[,-1] %>%  apply(., 1, var)
 rna.var %>% sort %>% rev %>% .[100]
 #top_miRNA <-  raw_miRNA[rna.var > 3.9, ]
@@ -66,8 +66,8 @@ top_miRNA_norm_PEV <- apply(top_miRNA_PEV_mat,2, stdnorm)
 head(top_miRNA_norm_PEV)
 
 
-boxplot(top_prot_norm)
-boxplot(top_miRNA_norm_PEV)
+boxplot(top_prot_norm, cex.axis =1.2)
+boxplot(top_miRNA_norm_PEV, cex.axis= 1.2)
 
 #We add the feature names
 rownames(top_prot_norm) <- top_prot[,1]
@@ -75,20 +75,20 @@ rownames(top_miRNA_norm_PEV) <-top_miRNA_PEV[,1]
 
 #We add an empty column for each fourth sample in the protein matrix so that sample names match and order the columns and order the samples
 top_prot_norm_df <- as.data.frame(top_prot_norm)
-empty_cols <- c("unstimulated_PEV_4", "GPVI_PEV_4", "CLEC2_PEV_4", "TC_PEV_4") #creating empty columns so that samples match as protein data have only 3 technical replicates 
+empty_cols <- c("US_PEV_4", "GPVI_PEV_4", "CLEC2_PEV_4", "TC_PEV_4") #creating empty columns so that samples match as protein data have only 3 technical replicates 
 top_prot_norm_df[empty_cols] <- lapply(empty_cols, function(x) NA)
 head(top_prot_norm_df)
 top_prot_norm_mat <- as.matrix(top_prot_norm_df)
 
 
-order <- c("unstimulated_PEV_1", "unstimulated_PEV_2", "unstimulated_PEV_3", "unstimulated_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4")
+order <- c("US_PEV_1", "US_PEV_2", "US_PEV_3", "US_PEV_4","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4")
 top_prot_norm_mat <- top_prot_norm_mat[,order]
 top_miRNA_norm_PEV <- top_miRNA_norm_PEV[ , order]
 
 
 #we create csv files of the filtered and normalized data
-write.csv(top_miRNA_norm_PEV, "top100PEVmiRNA_norm", row.names = TRUE)
-write.csv(top_prot_norm_mat, "top100prot_norm", row.names = TRUE)
+write.csv(top_miRNA_norm_PEV, "top100PEVmiRNA_norm.csv", row.names = TRUE)
+write.csv(top_prot_norm_mat, "top100prot_norm.csv", row.names = TRUE)
 
 ```
 
