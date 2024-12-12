@@ -82,20 +82,20 @@ pairs(combined_mat)
 ```{r}
 
 #Plotting single factors and PCs against each other
-groups <- c("unstimulated", "unstimulated", "unstimulated", "unstimulated", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC")
+Groups <- c("US", "US", "US", "US", "GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC")
 factorPC_df <- as.data.frame(factor_pca_mat)
-factorPC_df$group <- groups
-ggplot(factorPC_df, aes(x=Factor4, y=PC3, color = group)) +geom_point(size  = 2.5 )+ theme_minimal()
+factorPC_df$Group <- Groups
 
 
-#Fitting a linear regression model to the PC vs Factor 
+#Fitting a linear regression model t the PC vs Factor 
 modelFA1_PC2 <- lm(PC2 ~ Factor1 , data = factorPC_df)
 summary(modelFA1_PC2)
-ggplot(factorPC_df, aes(x=Factor1, y=PC2, color = group)) +geom_point(size  = 2.5 ) + geom_smooth(method = "lm", color = "black")+ theme_minimal()
+ggplot(factorPC_df, aes(x=Factor1, y=PC2, color = Group)) +geom_point(size  = 3 ) + geom_smooth(method = "lm", color = "black")+ theme_minimal()+theme(plot.title = element_text(hjust=0.5, size =15), axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_text(size  = 12, color = "black"), axis.text.y = element_text(size = 12, color = "black"),legend.text = element_text(size = 12), legend.title = element_text(size  = 12))+ guides(color = guide_legend(override.aes = list(shape = 16, size = 4)))
+  
 
 modelFA4_PC3 <- lm(PC3 ~ Factor4 , data = factorPC_df)
 summary(modelFA4_PC3)
-ggplot(factorPC_df, aes(x=Factor4, y=PC3, color = group)) +geom_point(size  = 2.5 ) + geom_smooth(method = "lm", color = "black")+ theme_minimal()
+ggplot(factorPC_df, aes(x=Factor4, y=PC3, color = Group)) +geom_point(size  = 2.5 ) + geom_smooth(method = "lm", color = "black")+ theme_minimal()
 
 
 #Fitting a regression model to the sum of the factors 
