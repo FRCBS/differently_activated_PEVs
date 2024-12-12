@@ -49,7 +49,7 @@ cytokines_long <- top_cytokines %>%
 #Function for barplot of each cytokine colored by group and the title being the protein
 plot_cytokines <- function(name){
   cytokines_long %>% filter(Cytokine == name) %>% 
-  ggplot(aes(x= Sample, y = Intensity,  fill = Group))+ geom_bar(stat="identity") + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =20))+ theme(axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 11, color = "black"))
+  ggplot(aes(x= Sample, y = Intensity,  fill = Group))+ geom_bar(stat="identity") + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =20))+ theme(axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_text(size = 11, color = "black"), axis.text.y = element_text(size = 11, color = "black"))
 }
 
 #creating a list of cytokines and plotting each and saving in a pdf
@@ -94,7 +94,7 @@ protclass_long <- protein_class_prot %>%
 #Function for barplot of each protein colored by group
 plot_proteins <- function(df_long, name){
   df_long %>% filter(Protein == name) %>% 
-  ggplot(aes(x= Sample, y = Abundance,  fill = Group))+ geom_bar(stat="identity") + theme_minimal()+theme(axis.text.x = element_blank())+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =15), axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 11, color = "black"))
+  ggplot(aes(x= Sample, y = Abundance,  fill = Group))+ geom_bar(stat="identity") + theme_minimal()+theme(axis.text.x = element_blank())+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =15), axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_text(size =11, color = "black"), axis.text.y = element_text(size = 11, color = "black"))
   
 }
 
@@ -121,10 +121,10 @@ dev.off()
 
 ```{r}
 
-#Function for barplot of each protein colored by group
+#Function for boxplots of each protein colored by group
 boxplot_proteins <- function(df_long, name){
   df_long %>% filter(Protein == name) %>% 
-  ggplot(aes(x= Group, y = Abundance,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =15),axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 11, color = "black"))
+  ggplot(aes(x= Group, y = Abundance,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(hjust=0.5, size =15),axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_text(size =11, color = "black"), axis.text.y = element_text(size = 11, color = "black"))
 }
 
 #Creating lists of proteins to be plotted and plotting them in a pdf
@@ -196,7 +196,7 @@ print(cytokines_long_combined)
 #Function for barplot of each cytokine colored by group and pattern based on time 
 plot_cytokines <- function(df_long,name){
   df_long %>% filter(Cytokine == name) %>% 
-  ggplot(aes(x= group_time, y = Intensity,  fill = Group, pattern = Time))+ geom_boxplot_pattern(pattern_density = 0.1, pattern_fill = "black", pattern_spacing = 0.05) + facet_grid(~Group, scales = "free_x", space = "free_x") +theme_minimal()+ labs(title = name, x = "Sample", y = "Intensity")+ theme(plot.title = element_text(hjust=0.5, size =20),axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_blank(), axis.text.y = element_text(size = 11, color = "black"),strip.text = element_text(size = 11)) + scale_x_discrete(labels = rep(c("6h","24h"), times = 4))
+  ggplot(aes(x= group_time, y = Intensity,  fill = Group, pattern = Time))+ geom_boxplot_pattern(pattern_density = 0.1, pattern_fill = "black", pattern_spacing = 0.05) + facet_grid(~Group, scales = "free_x", space = "free_x") +theme_minimal()+ labs(title = name, x = "Sample", y = "Intensity")+ theme(plot.title = element_text(hjust=0.5, size =20),axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_text(size = 11, color = "black"), axis.text.y = element_text(size = 11, color = "black"),strip.text = element_text(size = 11)) + scale_x_discrete(labels = rep(c("6h","24h"), times = 4))
 }
 
 
