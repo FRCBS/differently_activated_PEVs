@@ -25,7 +25,7 @@ library(gridExtra)
 ```{r}
 #We load the data and add sample names and protein names as rownames
 prot_data <- read.csv("/home/aosterberg/Documents/DI_työ/PEVproteomics.csv",header = TRUE, dec = ",")
-colnames(prot_data)<- c("protein", "unstimulated_PEV_1","unstimulated_PEV_2","unstimulated_PEV_3","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3","TC_PEV_1","TC_PEV_2","TC_PEV_3")
+colnames(prot_data)<- c("protein", "US_PEV_1","US_PEV_2","US_PEV_3","GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3","TC_PEV_1","TC_PEV_2","TC_PEV_3")
 rownames(prot_data) <- prot_data[,1]
 prot_data <- prot_data[,2:13] #we remove NA columns that were present in the loaded csv file 
 head(prot_data)
@@ -35,7 +35,7 @@ head(prot_data)
 prot_long <- prot_data %>% 
   rownames_to_column(var = "Protein") %>% 
   pivot_longer(-Protein, names_to= "Sample", values_to = "Abundance")%>% 
-  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC"), times  = length(rownames(prot_data))))
+  mutate(Group=rep(c("US", "US", "US", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC"), times  = length(rownames(prot_data))))
 head(prot_long)
 
 
@@ -65,6 +65,7 @@ print(results)
 #We filter proteins 
 significant_proteins <- results %>% 
   filter(p.adjusted < 0.05)
+
 #Only Tripeptidyl-peptidase 1 was deemed significant, thus we choose to plot the 6 proteins with the lowest p-values which includes this 
 
 
@@ -74,14 +75,14 @@ clec2_proteins <- prot_data[proteins,]
 prot_long <- clec2_proteins %>% 
   rownames_to_column(var = "Protein") %>% 
   pivot_longer(-Protein, names_to= "Sample", values_to = "Abundance")%>% 
-  mutate(Group=rep(c("Unstimulated", "Unstimulated", "Unstimulated", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC"), times  = 6))
+  mutate(Group=rep(c("US", "US", "US", "GPVI", "GPVI","GPVI", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC"), times  = 6))
 head(prot_long)
 
 
 #Function for creating boxplots for each sample for each protein, with boxplots colored by group
 boxplot_proteins <- function(df_long, name){
   df_long %>% filter(Protein == name) %>% 
-  ggplot(aes(x= Group, y = Abundance,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(size =11))
+  ggplot(aes(x= Group, y = Abundance,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_text(size = 13, color = "black"), axis.text.y = element_text(size = 13,  color = "black"),legend.text = element_text(size = 12), legend.title = element_text(size  = 12), plot.title= element_text(size = 11))
 }
 
 
@@ -106,9 +107,9 @@ dev.off()
 
 ```{r}
 
-#We load miRNA dataand add sample names and miRNAs as rownames
+#We load miRNA data and add sample names and miRNAs as rownames
 raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/PEVmiRNA.csv",header = TRUE)
-colnames(raw_data) <- c("miRNA", "GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "Unstimulated_PEV_1","Unstimulated_PEV_2","Unstimulated_PEV_3","Unstimulated_PEV_4", "Platelet_1", "Platelet_2", "Platelet_3", "Platelet_4")
+colnames(raw_data) <- c("miRNA", "GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3", "CLEC2_PEV_4", "TC_PEV_1","TC_PEV_2","TC_PEV_3", "TC_PEV_4", "US_PEV_1","US_PEV_2","US_PEV_3","US_PEV_4", "Platelet_1", "Platelet_2", "Platelet_3", "Platelet_4")
 rownames(raw_data)<- raw_data[,1]
 miRNA_data <- raw_data[,2:17] #we drop platelet samples 
 head(miRNA_data)
@@ -117,7 +118,7 @@ head(miRNA_data)
 miRNA_long <- miRNA_data %>% 
   rownames_to_column(var = "miRNA") %>% 
   pivot_longer(-miRNA, names_to= "Sample", values_to = "Counts")%>% 
-  mutate(Group=rep(c("GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC", "Unstimulated", "Unstimulated","Unstimulated", "Unstimulated"), times = length(rownames(miRNA_data))))
+  mutate(Group=rep(c("GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC", "US", "US","US", "US"), times = length(rownames(miRNA_data))))
 head(miRNA_long)
 
 
@@ -157,13 +158,13 @@ clec2_miRNA <- miRNA_data[miRNAs,]
 miRNA_long <- clec2_miRNA %>% 
   rownames_to_column(var = "miRNA") %>% 
   pivot_longer(-miRNA, names_to= "Sample", values_to = "Counts")%>% 
-  mutate(Group=rep(c("GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC", "Unstimulated", "Unstimulated","Unstimulated", "Unstimulated"), times = length(rownames(clec2_miRNA))))
+  mutate(Group=rep(c("GPVI", "GPVI","GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "CLEC2","TC","TC","TC","TC", "US", "US","US", "US"), times = length(rownames(clec2_miRNA))))
 
 
 #Function for creating boxplots for each sample for each protein, with boxplots colored by group
 boxplot_miRNA<- function(df_long, name){
   df_long %>% filter(miRNA == name) %>% 
-  ggplot(aes(x= Group, y = Counts,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(size =11))
+  ggplot(aes(x= Group, y = Counts,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_text(size = 13, color = "black"), axis.text.y = element_text(size = 13,  color = "black"),legend.text = element_text(size = 12), legend.title = element_text(size  = 12))
 }
 
 
@@ -191,9 +192,9 @@ dev.off()
 #Loading the inflammation panel data and setting rownames and sample names 
 raw_data <- read.csv("/home/aosterberg/Documents/DI_työ/PEVinflammationpanel.csv",header = TRUE)
 rownames(raw_data) <- raw_data[,1]
-colnames(raw_data) <- c("protein", "Unstimulated_PEV_1","Unstimulated_PEV_2","Unstimulated_PEV_3", "Unstimulated_PEV_4", "GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3","TC_PEV_1","TC_PEV_2","TC_PEV_3")
+colnames(raw_data) <- c("protein", "US_PEV_1","US_PEV_2","US_PEV_3", "US_PEV_4", "GPVI_PEV_1", "GPVI_PEV_2", "GPVI_PEV_3", "GPVI_PEV_4", "CLEC2_PEV_1","CLEC2_PEV_2","CLEC2_PEV_3","TC_PEV_1","TC_PEV_2","TC_PEV_3")
 PEA_df <- raw_data[,2:15] 
-PEA_groups <- c("Unstimulated", "Unstimulated","Unstimulated", "Unstimulated", "GPVI", "GPVI", "GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "TC", "TC","TC")
+PEA_groups <- c("US", "US","US", "US", "GPVI", "GPVI", "GPVI", "GPVI", "CLEC2", "CLEC2", "CLEC2", "TC", "TC","TC")
 
 #Formatting the dataframes for plotting
 PEA_long <- PEA_df %>% 
@@ -243,7 +244,7 @@ head(PEA_long)
 #Function for creating boxplots for each sample for each protein, with boxplots colored by group
 boxplot_proteins <- function(df_long, name){
   df_long %>% filter(Protein == name) %>% 
-  ggplot(aes(x= Group, y = NPX,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(plot.title = element_text(size =11))
+  ggplot(aes(x= Group, y = NPX,  fill = Group))+ geom_boxplot() + theme_minimal()+ labs(title = name)+ theme(axis.title.x = element_text(size = 13, color = "black"), axis.title.y = element_text(size = 13, color = "black"), axis.text.x = element_text(size = 13, color = "black"), axis.text.y = element_text(size = 13,  color = "black"),legend.text = element_text(size = 12), legend.title = element_text(size  = 12))
 }
 
 
